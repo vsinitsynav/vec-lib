@@ -15,7 +15,7 @@ impl Vec128b {
         }
     }
 
-    ///# Safety
+    ///# Safety: only core::arch::x86_64 module is used
     ///
     /// Loads from unaligned array
     #[inline]
@@ -23,7 +23,7 @@ impl Vec128b {
         self.xmm = _mm_loadu_si128(mem_addr as *const __m128i);
     }
 
-    ///# Safety
+    ///# Safety: only core::arch::x86_64 module is used
     ///
     /// mem_addr must be aligned by 16
     #[inline]
@@ -31,7 +31,7 @@ impl Vec128b {
         self.xmm = _mm_load_si128(mem_addr as *const __m128i);
     }
 
-    ///# Safety
+    ///# Safety: only core::arch::x86_64 module is used
     ///
     /// Stores into unaligned array
     #[inline]
@@ -39,7 +39,7 @@ impl Vec128b {
         _mm_storeu_si128(mem_addr as *mut __m128i, self.xmm);
     }
 
-    ///# Safety
+    ///# Safety: only core::arch::x86_64 module is used
     ///
     /// mem_addr must be aligned by 16
     #[inline]
@@ -119,7 +119,7 @@ impl ops::BitXorAssign for Vec128b {
     }
 }
 
-///# Safety
+///# Safety: only core::arch::x86_64 module is used
 ///
 /// function andnot: a & ~ b
 #[inline]
@@ -131,18 +131,18 @@ pub fn andnot(a: Vec128b, b: Vec128b) -> Vec128b {
     }
 }
 
-///# Safety
+///# Safety: only core::arch::x86_64 module is used
 ///
 /// Select between two sources, byte by byte, using broad boolean vector s.
 /// Corresponds to this pseudocode:
 /// for (int i = 0; i < 16; i++) result[i] = s[i] ? a[i] : b[i];
 /// Each byte in s must be either 0 (false) or 0xFF (true). No other values are allowed.
 #[inline]
-pub(crate) fn selectb(s: __m128i, a: __m128i, b: __m128i) -> __m128i {
+pub(crate) unsafe fn selectb(s: __m128i, a: __m128i, b: __m128i) -> __m128i {
     unsafe { _mm_or_si128(_mm_and_si128(s, a), _mm_andnot_si128(s, b)) }
 }
 
-///# Safety
+///# Safety: only core::arch::x86_64 module is used
 ///
 /// Returns false if at least one bit is 0
 #[inline]
@@ -154,7 +154,7 @@ pub fn horizontal_and(a: Vec128b) -> bool {
     }
 }
 
-///# Safety
+///# Safety: only core::arch::x86_64 module is used
 ///
 /// Returns true if at least one bit is 1
 #[inline]
