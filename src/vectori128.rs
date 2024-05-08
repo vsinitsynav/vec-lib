@@ -15,7 +15,7 @@ impl Vec128b {
         }
     }
 
-    ///# Safety: only core::arch::x86_64 module is used
+    ///# Safety: TODO
     ///
     /// Loads from unaligned array
     #[inline]
@@ -23,7 +23,7 @@ impl Vec128b {
         self.xmm = _mm_loadu_si128(mem_addr as *const __m128i);
     }
 
-    ///# Safety: only core::arch::x86_64 module is used
+    ///# Safety: TODO
     ///
     /// mem_addr must be aligned by 16
     #[inline]
@@ -31,7 +31,7 @@ impl Vec128b {
         self.xmm = _mm_load_si128(mem_addr as *const __m128i);
     }
 
-    ///# Safety: only core::arch::x86_64 module is used
+    ///# Safety: TODO
     ///
     /// Stores into unaligned array
     #[inline]
@@ -39,7 +39,7 @@ impl Vec128b {
         _mm_storeu_si128(mem_addr as *mut __m128i, self.xmm);
     }
 
-    ///# Safety: only core::arch::x86_64 module is used
+    ///# Safety: TODO
     ///
     /// mem_addr must be aligned by 16
     #[inline]
@@ -119,7 +119,7 @@ impl ops::BitXorAssign for Vec128b {
     }
 }
 
-///# Safety: only core::arch::x86_64 module is used
+///# Safety: TODO
 ///
 /// function andnot: a & ~ b
 #[inline]
@@ -142,7 +142,7 @@ pub(crate) unsafe fn selectb(s: __m128i, a: __m128i, b: __m128i) -> __m128i {
     unsafe { _mm_or_si128(_mm_and_si128(s, a), _mm_andnot_si128(s, b)) }
 }
 
-///# Safety: only core::arch::x86_64 module is used
+///# Safety: TODO
 ///
 /// Returns false if at least one bit is 0
 #[inline]
@@ -154,7 +154,7 @@ pub fn horizontal_and(a: Vec128b) -> bool {
     }
 }
 
-///# Safety: only core::arch::x86_64 module is used
+///# Safety: TODO
 ///
 /// Returns true if at least one bit is 1
 #[inline]
@@ -188,34 +188,15 @@ impl Vec16c {
     }
 
     /// Constructor to build from all elements:
-    pub fn set_values(
-        i0: i8,
-        i1: i8,
-        i2: i8,
-        i3: i8,
-        i4: i8,
-        i5: i8,
-        i6: i8,
-        i7: i8,
-        i8: i8,
-        i9: i8,
-        i10: i8,
-        i11: i8,
-        i12: i8,
-        i13: i8,
-        i14: i8,
-        i15: i8,
-    ) -> Self {
+    pub fn set_values(a: [i8; 16]) -> Self {
         unsafe {
             Vec16c {
-                xmm: _mm_setr_epi8(
-                    i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15,
-                ),
+                xmm: _mm_loadu_si128(&a as *const i8 as *const __m128i),
             }
         }
     }
 
-    ///# Safety: only core::arch::x86_64 module is used
+    ///# Safety: TODO
     ///
     /// Member function to load from array (unaligned)
     #[inline]
@@ -223,7 +204,7 @@ impl Vec16c {
         self.xmm = _mm_loadu_si128(mem_addr as *const __m128i);
     }
 
-    ///# Safety: only core::arch::x86_64 module is used
+    ///# Safety: TODO
     ///
     /// mem_addr must be aligned by 16
     #[inline]
@@ -231,7 +212,7 @@ impl Vec16c {
         self.xmm = _mm_load_si128(mem_addr as *const __m128i);
     }
 
-    ///# Safety: only core::arch::x86_64 module is used
+    ///# Safety: TODO
     ///
     /// Stores into unaligned array
     #[inline]
@@ -239,7 +220,7 @@ impl Vec16c {
         _mm_storeu_si128(mem_addr as *mut __m128i, self.xmm);
     }
 
-    ///# Safety: only core::arch::x86_64 module is used
+    ///# Safety: TODO
     ///
     /// mem_addr must be aligned by 16
     #[inline]
@@ -251,20 +232,20 @@ impl Vec16c {
     ///
     /// Partial load. Load n elements and set the rest to 0
     #[inline]
-    pub unsafe fn load_partial(&mut self, n: isize, mem_addr: *const i8) {
+    pub unsafe fn load_partial(&mut self, n: usize, arr: &[i8]) {
         if n >= 16 {
-            self.load(mem_addr);
+            self.load(arr as *const [i8] as *const i8);
         } else if n <= 0 {
             self.xmm = _mm_setzero_si128();
-        } else if (mem_addr as isize as i32 & 0xFFF) < 0xFF0 {
+        } else if ((arr as *const [i8] as *const i8) as i32 & 0xFFF) < 0xFF0 {
             // mem_addr is at least 16 bytes from a page boundary. OK to read 16 bytes
-            self.load(mem_addr);
+            self.load(arr as *const [i8] as *const i8);
         } else {
             // worst case. read 1 byte at a time and suffer store forwarding penalty
             // unless the compiler can optimize this
             let mut x: [i8; 16] = [0; 16];
             for i in 0..n {
-                x[i as usize] = *(mem_addr as *const i8).offset(i);
+                x[i as usize] = *(arr as *const [i8] as *const i8).offset(i as isize);
             }
             self.load(&x as *const i8);
         }
@@ -286,24 +267,22 @@ impl Vec16c {
         }
     }
 
-    ///# Safety: only core::arch::x86_64 module is used
+    ///# Safety: TODO
     ///
     /// cut off vector to n elements. The last 16-n elements are set to zero
     #[inline]
-    pub unsafe fn cutoff(&mut self, n: isize) {
+    pub unsafe fn cutoff(&mut self, n: usize) {
         if n as u32 >= 16 {
             return;
         }
-        let mask: [i8; 32] = [
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-        ];
+
+        let mask: [i8; 32] = core::array::from_fn(|i| ((i as i8 & 16) >> 4) - 1);
         let mut tmp = Vec16c::new();
-        tmp.load((&mask as *const i8).offset(16 - n));
+        tmp.load((&mask as *const i8).offset(16 - n as isize));
         self.xmm = _mm_and_si128(self.xmm, tmp.xmm)
     }
 
-    ///# Safety: only core::arch::x86_64 module is used
+    ///# Safety: TODO
     ///
     /// Member function to change a single element in vector
     #[inline]
@@ -354,7 +333,7 @@ impl Vec16bc {
         x15: bool,
     ) -> Self {
         Vec16bc {
-            xmm: Vec16c::set_values(
+            xmm: Vec16c::set_values([
                 -(x0 as i8),
                 -(x1 as i8),
                 -(x2 as i8),
@@ -371,7 +350,7 @@ impl Vec16bc {
                 -(x13 as i8),
                 -(x14 as i8),
                 -(x15 as i8),
-            )
+            ])
             .xmm,
         }
     }
