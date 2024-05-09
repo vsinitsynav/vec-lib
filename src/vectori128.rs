@@ -245,7 +245,7 @@ impl Vec16c {
             // unless the compiler can optimize this
             let mut x: [i8; 16] = [0; 16];
             for i in 0..n {
-                x[i as usize] = *(arr as *const [i8] as *const i8).offset(i as isize);
+                x[i] = arr[i];
             }
             self.load(&x as *const i8);
         }
