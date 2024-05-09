@@ -1,56 +1,86 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use rand::Rng;
+use vec_lib::vectori128::Vec16c;
 
-use vec_lib::vectori128::{Vec16c};
+const LEN: usize = 1000000;
 
-use rand::Rng; // 0.6.5
+#[inline(never)]
+fn stupid(a: &[i8], b: &[i8], sz: usize) -> Vec<i8> {
+    let mut c = vec![0; sz];
 
-const LEN: usize = 1000000000;
-
-fn stupid(a: &Vec<i8>, b: &Vec<i8>) {
-    let sz = a.len();
-    let mut c: [i8; LEN] = [0; LEN];
     for i in 0..sz {
-        c[i] = black_box(a[i] * b[i]);
+        c[i] = a[i] * b[i];
     }
+    c
 }
 
-fn smart(a: &Vec<i8>, b: &Vec<i8>) {
-    let sz = a.len();
-    let mut c: [i8; LEN] = [0; LEN];
+#[inline(never)]
+fn smart(a: &[i8], b: &[i8], sz: usize) -> Vec<i8> {
+    let mut c = vec![0; sz];
+    let mut address = c.as_mut_ptr();
+
     let mut i = 0;
+
     loop {
+        let mut a16 = Vec16c::new();
+        let mut b16 = Vec16c::new();
+
+        if i + 16 >= sz {
+            // SAFETY: at least sz - i bytes of memory are allocated
+            unsafe {
+                a16.load_partial(sz - i, &a[i..sz]);
+                b16.load_partial(sz - i, &b[i..sz]);
+            }
+            let mut c16 = a16 * b16;
+            // SAFETY: pointer is located where at least sz - i bytes of memory are located
+            unsafe {
+                c16.store_partial(sz - i, address);
+            }
+        } else {
+            // SAFETY: at least 16 bytes of memory are allocated
+            unsafe {
+                a16.load(&a[i] as *const i8);
+                b16.load(&a[i] as *const i8);
+            }
+            let c16 = a16 * b16;
+            // SAFETY: pointer is located where at least 16 bytes of memory are located
+            unsafe {
+                c16.store(address);
+            }
+        }
+        i += 16;
         if i >= sz {
             break;
         }
-        black_box(
         unsafe {
-            let mut a16 = Vec16c::new();
-            let mut b16 = Vec16c::new();    
-            a16.load( &a[i] as *const i8);
-            b16.load( &b[i] as *const i8);
-            if i + 16 >= sz {
-                a16.cutoff((sz - i) as isize);
-                b16.cutoff((sz - i) as isize);
-            }
-            let c16 = a16 * b16;
-            c16.store(&mut c[i] as *mut i8);
+            address = address.add(16);
         }
-        );
-        i += 16;
     }
+    c
 }
 
 fn multiplication_benchmark(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
 
-    let a: Vec<i8> = (0..1000000).map(|_| rng.gen_range(0..11)).collect();
-    let b: Vec<i8> = (0..1000000).map(|_| rng.gen_range(0..11)).collect();
+    let lens: [usize; 5] = [100, 1000, 10000, 100000, 1000000];
 
-    c.bench_function("stupid multiplication 1e9", |c| c.iter(|| stupid(&a, &b)));
+    let a: [i8; LEN] = core::array::from_fn(|_| rng.gen_range(0..11));
+    let b: [i8; LEN] = core::array::from_fn(|_| rng.gen_range(0..11));
 
-    c.bench_function("vec-lib multiplication 1e9", |c| c.iter(|| smart(&a, &b)));
+    for i in 0..5 {
+        let j = i + 2;
+        let name1 = format!("stupid multiplication 1e{j}");
+        let name2 = format!("vec-lib multiplication 1e{j}");
+
+        c.bench_function(name1.as_str(), |c| {
+            c.iter(|| black_box(stupid(black_box(&a), black_box(&b), lens[i])))
+        });
+
+        c.bench_function(name2.as_str(), |c| {
+            c.iter(|| black_box(smart(black_box(&a), black_box(&b), lens[i])))
+        });
+    }
 }
 
-// criterion_group!(benches, multiplication_benchmark);
 criterion_group!(benches, multiplication_benchmark);
 criterion_main!(benches);
