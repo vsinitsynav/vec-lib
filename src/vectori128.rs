@@ -15,7 +15,7 @@ impl Vec128b {
         }
     }
 
-    ///# Safety: TODO
+    ///# Safety: obvious
     ///
     /// Loads from unaligned array
     #[inline]
@@ -23,7 +23,7 @@ impl Vec128b {
         self.xmm = _mm_loadu_si128(mem_addr as *const __m128i);
     }
 
-    ///# Safety: TODO
+    ///# Safety: obvious
     ///
     /// mem_addr must be aligned by 16
     #[inline]
@@ -31,7 +31,7 @@ impl Vec128b {
         self.xmm = _mm_load_si128(mem_addr as *const __m128i);
     }
 
-    ///# Safety: TODO
+    ///# Safety: obvious
     ///
     /// Stores into unaligned array
     #[inline]
@@ -39,7 +39,7 @@ impl Vec128b {
         _mm_storeu_si128(mem_addr as *mut __m128i, self.xmm);
     }
 
-    ///# Safety: TODO
+    ///# Safety: obvious
     ///
     /// mem_addr must be aligned by 16
     #[inline]
@@ -119,7 +119,7 @@ impl ops::BitXorAssign for Vec128b {
     }
 }
 
-///# Safety: TODO
+///# Safety: obvious
 ///
 /// function andnot: a & ~ b
 #[inline]
@@ -142,7 +142,7 @@ pub(crate) unsafe fn selectb(s: __m128i, a: __m128i, b: __m128i) -> __m128i {
     unsafe { _mm_or_si128(_mm_and_si128(s, a), _mm_andnot_si128(s, b)) }
 }
 
-///# Safety: TODO
+///# Safety: obvious
 ///
 /// Returns false if at least one bit is 0
 #[inline]
@@ -154,7 +154,7 @@ pub fn horizontal_and(a: Vec128b) -> bool {
     }
 }
 
-///# Safety: TODO
+///# Safety: obvious
 ///
 /// Returns true if at least one bit is 1
 #[inline]
@@ -196,7 +196,7 @@ impl Vec16c {
         }
     }
 
-    ///# Safety: TODO
+    ///# Safety: obvious
     ///
     /// Member function to load from array (unaligned)
     #[inline]
@@ -204,7 +204,7 @@ impl Vec16c {
         self.xmm = _mm_loadu_si128(mem_addr as *const __m128i);
     }
 
-    ///# Safety: TODO
+    ///# Safety: obvious
     ///
     /// mem_addr must be aligned by 16
     #[inline]
@@ -212,7 +212,7 @@ impl Vec16c {
         self.xmm = _mm_load_si128(mem_addr as *const __m128i);
     }
 
-    ///# Safety: TODO
+    ///# Safety: obvious
     ///
     /// Stores into unaligned array
     #[inline]
@@ -220,7 +220,7 @@ impl Vec16c {
         _mm_storeu_si128(mem_addr as *mut __m128i, self.xmm);
     }
 
-    ///# Safety: TODO
+    ///# Safety: obvious
     ///
     /// mem_addr must be aligned by 16
     #[inline]
@@ -267,7 +267,7 @@ impl Vec16c {
         }
     }
 
-    ///# Safety: TODO
+    ///# Safety: obvious
     ///
     /// cut off vector to n elements. The last 16-n elements are set to zero
     #[inline]
@@ -282,7 +282,7 @@ impl Vec16c {
         self.xmm = _mm_and_si128(self.xmm, tmp.xmm)
     }
 
-    ///# Safety: TODO
+    ///# Safety: obvious
     ///
     /// Member function to change a single element in vector
     #[inline]
@@ -297,7 +297,7 @@ impl Vec16c {
         self.xmm = selectb(mask, broad, self.xmm);
     }
 
-    ///# Safety: TODO
+    ///# Safety: obvious
     ///
     /// Member function extract a single element from vector
     #[inline]
