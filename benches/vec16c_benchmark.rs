@@ -29,44 +29,54 @@ mod vcl {
     }
 }
 
+
+fn stupid_multiplication(a: &[i8], b: &[i8], c: &mut [i8], sz: usize) {
+    assert_eq!(a.len(), b.len());
+    assert!(sz <= a.len());
+    assert!(sz <= c.len());
+
+    for i in 0..sz {
+        c[i] = black_box(a[i] * b[i]);
+    }
+}
+
 fn vec_lib_multiplication(a: &[i8], b: &[i8], c: &mut [i8], sz: usize) {
     assert_eq!(a.len(), b.len());
     assert!(sz <= a.len());
     assert!(sz <= c.len());
 
-    let mut i = 0;
-
     let mut a16 = Vec16c::new();
     let mut b16 = Vec16c::new();
-    let mut address = c.as_mut_ptr();
+    let mut c16;
+    let  address = c.as_mut_ptr();
+    let  tmpa = a.as_ptr();
+    let  tmpb = b.as_ptr();
 
-    while i + 16 < sz {
+    for i in (0..sz).step_by(16) {
         // SAFETY: at least 16 bytes of memory are allocated
+        let j = i.try_into().unwrap();
         unsafe {
-            a16.load(&a[i] as *const i8);
-            b16.load(&b[i] as *const i8);
+            a16.load(tmpa.add(j));
+            b16.load(tmpb.add(j));
         }
-        let c16 = a16 * b16;
+        c16 = a16 * b16;
         // SAFETY: pointer is located where at least 16 bytes of memory are located
         unsafe {
-            c16.store(address);
-        }
-        i += 16;
-        unsafe {
-            address = address.add(16);
+            c16.store(address.add(j));
         }
     }
 
-    if i < sz {
+    if (sz & 15) > 0 {
         // SAFETY: at least sz - i bytes of memory are allocated
+        let i = (sz >> 4) << 4;
         unsafe {
-            a16.load_partial(sz - i, &a[i..sz]);
-            b16.load_partial(sz - i, &b[i..sz]);
+            a16.load_partial(sz & 15, &a[i..sz]);
+            b16.load_partial(sz & 15, &b[i..sz]);
         }
-        let mut c16 = a16 * b16;
+        c16 = a16 * b16;
         // SAFETY: pointer is located where at least sz - i bytes of memory are located
         unsafe {
-            c16.store_partial(sz - i, address);
+            c16.store_partial(sz - i, address.add(i));
         }
     }
 }
@@ -74,16 +84,16 @@ fn vec_lib_multiplication(a: &[i8], b: &[i8], c: &mut [i8], sz: usize) {
 fn multiplication_benchmark(criteria: &mut Criterion) {
     let mut rng = rand::thread_rng();
 
-    let lens: [usize; 5] = [100, 1000, 10000, 100000, 1000000];
+    let lens: [usize; 7] = [1000, 5000, 10000, 50000, 100000, 500000, 1000000];
 
     let a: [i8; LEN] = core::array::from_fn(|_| rng.gen_range(0..11));
     let b: [i8; LEN] = core::array::from_fn(|_| rng.gen_range(0..11));
     let mut c: [i8; LEN] = [0; LEN];
 
-    for i in 0..5 {
-        let j = i + 2;
-        let name1 = format!("VCL multiplication 1e{j}");
-        let name2 = format!("vec-lib multiplication 1e{j}");
+    for i in 0..7 {
+        let name1 = format!("VCL C++ multiplication {}", lens[i]);
+        let name2 = format!("vec-lib Rust multiplication {}", lens[i]);
+        let name3 = format!("stupid Rust multiplication {}", lens[i]);
 
         criteria.bench_function(name1.as_str(), |criteria| {
             criteria.iter(|| {
@@ -91,7 +101,7 @@ fn multiplication_benchmark(criteria: &mut Criterion) {
                     black_box(&a),
                     black_box(&b),
                     black_box(&mut c),
-                    lens[i],
+                    lens[i]
                 ))
             })
         });
@@ -102,7 +112,18 @@ fn multiplication_benchmark(criteria: &mut Criterion) {
                     black_box(&a),
                     black_box(&b),
                     black_box(&mut c),
-                    lens[i],
+                    lens[i]
+                ))
+            })
+        });
+
+        criteria.bench_function(name3.as_str(), |criteria| {
+            criteria.iter(|| {
+                black_box(stupid_multiplication(
+                    black_box(&a),
+                    black_box(&b),
+                    black_box(&mut c),
+                    lens[i]
                 ))
             })
         });

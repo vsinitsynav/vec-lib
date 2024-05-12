@@ -22,3 +22,4 @@ void bench::MulVec8iVCL(const std::int8_t *vec1, const std::int8_t *vec2, std::i
         vcl_multiplied.store_partial(n - i, result + i);
     }
 }
+
