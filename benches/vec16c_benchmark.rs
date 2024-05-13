@@ -29,7 +29,6 @@ mod vcl {
     }
 }
 
-
 fn stupid_multiplication(a: &[i8], b: &[i8], c: &mut [i8], sz: usize) {
     assert_eq!(a.len(), b.len());
     assert!(sz <= a.len());
@@ -48,9 +47,9 @@ fn vec_lib_multiplication(a: &[i8], b: &[i8], c: &mut [i8], sz: usize) {
     let mut a16 = Vec16c::new();
     let mut b16 = Vec16c::new();
     let mut c16;
-    let  address = c.as_mut_ptr();
-    let  tmpa = a.as_ptr();
-    let  tmpb = b.as_ptr();
+    let address = c.as_mut_ptr();
+    let tmpa = a.as_ptr();
+    let tmpb = b.as_ptr();
 
     for i in (0..sz).step_by(16) {
         // SAFETY: at least 16 bytes of memory are allocated
@@ -101,7 +100,7 @@ fn multiplication_benchmark(criteria: &mut Criterion) {
                     black_box(&a),
                     black_box(&b),
                     black_box(&mut c),
-                    lens[i]
+                    lens[i],
                 ))
             })
         });
@@ -112,7 +111,7 @@ fn multiplication_benchmark(criteria: &mut Criterion) {
                     black_box(&a),
                     black_box(&b),
                     black_box(&mut c),
-                    lens[i]
+                    lens[i],
                 ))
             })
         });
@@ -123,7 +122,7 @@ fn multiplication_benchmark(criteria: &mut Criterion) {
                     black_box(&a),
                     black_box(&b),
                     black_box(&mut c),
-                    lens[i]
+                    lens[i],
                 ))
             })
         });

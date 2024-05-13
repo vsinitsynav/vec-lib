@@ -521,6 +521,16 @@ impl ops::BitAndAssign for Vec16c {
     }
 }
 
+/// vector operator == : equality
+impl PartialEq for Vec16c {
+    fn eq(&self, other: &Self) -> bool {
+        unsafe {
+            let neq = _mm_xor_si128(self.xmm, other.xmm);
+            _mm_test_all_zeros(neq, neq) > 0
+        }
+    }
+}
+
 ///# Safety: Each byte in s must be either 0 (false) or -1 (true). No other values are allowed.
 ///
 /// Select between two operands. Corresponds to this pseudocode:
@@ -672,6 +682,7 @@ pub fn rotate_left(a: Vec16c, b: i32) -> Vec16c {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::Rng;
     #[test]
     fn test_vec128b() {
         unsafe {
@@ -687,6 +698,21 @@ mod tests {
 
             a128 ^= a128;
             assert_eq!(false, horizontal_or(a128));
+        }
+    }
+
+    #[test]
+    fn test_vec16c() {
+        let mut rng = rand::thread_rng();
+
+        unsafe {
+            let mut a16 = Vec16c::new();
+            let arr1: [i8; 16] = core::array::from_fn(|_| rng.gen_range(0..50));
+            let b16 = Vec16c::set_values(arr1);
+            a16.load(&arr1 as *const [i8] as *const i8);
+            println!("{:?}, {:?}", a16.xmm, b16.xmm);
+            assert_eq!(a16, b16);
+            assert_eq!(a16 & b16, a16 & b16);
         }
     }
 }
